@@ -6,7 +6,7 @@ import (
 
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/joho/godotenv"
-	service"github.com/pavankalyan767/exchange-rate-service/service"
+	service "github.com/pavankalyan767/exchange-rate-service/service"
 	"github.com/pavankalyan767/exchange-rate-service/transport"
 )
 
@@ -20,12 +20,18 @@ func main() {
 	}
 
 	fetchExchangeRateHandler := httptransport.NewServer(
-		FetchExchangeRateEndPoint(svc),
-		decodeFetchExchangeRateRequest,
-		encodeResponse,
+		transport.FetchExchangeRateEndPoint(svc),
+		transport.DecodeFetchExchangeRateRequest,
+		transport.EncodeFetchExchangeRateResponse,
+	)
+	convertHandler := httptransport.NewServer(
+		transport.ConvertEndPoint(svc),
+		transport.DecodeConvertRequest,
+		transport.EncodeConvertResponse,
 	)
 
 	http.Handle("/fetch_exchange_rate", fetchExchangeRateHandler)
+	http.Handle("/convert", convertHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
 }
