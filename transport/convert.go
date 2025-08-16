@@ -12,13 +12,13 @@ import (
 	"github.com/pavankalyan767/exchange-rate-service/types"
 )
 
-func ConvertEndPoint(svc *service.ExchangeRateServiceImpl) endpoint.Endpoint {
+func ConvertFiatEndPoint(svc *service.ExchangeRateServiceImpl) endpoint.Endpoint {
 	fmt.Println("inside convert endpoint")
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(types.ConvertRequest)
 		ctx := context.Background()
 		fmt.Print("the request in convert endpoint: ", req)
-		amount, err := svc.Convert(ctx, req)
+		amount, err := svc.Convert(ctx, &req)
 		if err != nil {
 			a := &types.ConvertResponse{ConvertedAmount: amount, Error: err.Error()}
 			return a, nil
@@ -27,7 +27,7 @@ func ConvertEndPoint(svc *service.ExchangeRateServiceImpl) endpoint.Endpoint {
 	}
 }
 
-func DecodeConvertRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeConvertFiatRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	fmt.Println("inside decode convert request")
 	var request types.ConvertRequest
 	decoder := schema.NewDecoder()
@@ -41,6 +41,6 @@ func DecodeConvertRequest(_ context.Context, r *http.Request) (interface{}, erro
 	return request, nil
 }
 
-func EncodeConvertResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+func EncodeConvertFiatResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	return json.NewEncoder(w).Encode(response)
 }

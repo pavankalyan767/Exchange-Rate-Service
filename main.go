@@ -21,20 +21,29 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	rateCache := cache.NewCache(5*time.Minute, 10*time.Minute)
+	fiatCache := cache.NewCache(5*time.Minute, 10*time.Minute)
+	cryptoCache := cache.NewCache(5*time.Minute, 10*time.Minute)
 
-	apiKey := os.Getenv("API_KEY")
-	if apiKey == "" {
+	fiatapikey := os.Getenv("FIAT_API_KEY")
+	if fiatapikey == "" {
 		log.Fatalf("Error: EXCHANGE_RATE_API_KEY environment variable is not set.")
 	}
-	baseUrl := os.Getenv("BASE_API_URL")
-	if baseUrl == "" {
+	cryptoapikey := os.Getenv("CRYPTO_API_KEY")
+	if cryptoapikey == "" {
+		log.Printf("Warning: CRYPTO_API_KEY environment variable is not set. Crypto-related requests will not be available.")
+	}
+	fiatUrl := os.Getenv("FIAT_API_URL")
+	if fiatUrl == "" {
 		log.Fatalf("Error: BASE_API_URL environment variable is not set.")
 	}
-	apiClient := client.NewAPIClient(baseUrl, apiKey)
+	cryptoUrl := os.Getenv("CRYPTO_API_URL")
+	if cryptoUrl == "" {
+		log.Printf("Warning: CRYPTO_API_URL environment variable is not set. Crypto-related requests will not be available.")
+	}
+	apiClient := client.NewAPIClient(fiatUrl, cryptoUrl, fiatapikey, cryptoapikey)
 
-	svc := service.NewExchangeRateServiceImpl(rateCache)
-	rate_fetcher := service.NewRateFetcher(apiClient, rateCache)
+	svc := service.NewExchangeRateServiceImpl(fiatCache, cryptoCache)
+	rate_fetcher := service.NewRateFetcher(apiClient, fiatCache, cryptoCache)
 
 	// --- Core Polling Logic ---
 
@@ -48,13 +57,13 @@ func main() {
 
 	// 2. Start a background goroutine for hourly polling.
 	//    The ticker will tick every hour, triggering a new API call.
-	log.Println("Starting hourly polling for live rates...")
-	ctx,cancel := context.WithCancel(context.Background())
-	if err:= rate_fetcher.LiveRate(ctx); err != nil {
+	log.Println("Starting hourly polling for live fiat rates...")
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := rate_fetcher.LiveRate(ctx); err != nil {
 		log.Fatalf("Failed to fetch live rates on startup: %v", err)
 	}
 	defer cancel() // Ensure the context is cancelled when the main function exits
-	ticker := time.NewTicker( 1* time.Hour)
+	ticker := time.NewTicker(1 * time.Hour)
 	defer ticker.Stop()
 
 	go func() {
@@ -70,15 +79,37 @@ func main() {
 		}
 	}()
 
-	fetchExchangeRateHandler := httptransport.NewServer(
-		transport.FetchExchangeRateEndPoint(svc),
-		transport.DecodeFetchExchangeRateRequest,
-		transport.EncodeFetchExchangeRateResponse,
+	log.Println("Starting hourly polling for live crypto rates...")
+	ctx1, cancel := context.WithCancel(context.Background())
+	if err := rate_fetcher.CryptoRate(ctx1); err != nil {
+		log.Fatalf("Failed to fetch live rates on startup: %v", err)
+	}
+	defer cancel() // Ensure the context is cancelled when the main function exits
+	ticker1 := time.NewTicker(1 * time.Hour)
+	defer ticker1.Stop()
+
+	go func() {
+		// This loop waits for the ticker to "tick"
+		for range ticker.C {
+			log.Println("Hourly poll initiated...")
+			// Create a new, short-lived context for each recurring API call.
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			if err := rate_fetcher.CryptoRate(ctx); err != nil {
+				log.Printf("Error during hourly rate polling: %v", err)
+			}
+			cancel() // Clean up context after the call is done
+		}
+	}()
+
+	FetchFiatRateHandler := httptransport.NewServer(
+		transport.FetchFiatRateEndpoint(svc),
+		transport.DecodeFetchFiatRateRequest,
+		transport.EncodeFetchFiatRateResponse,
 	)
 	convertHandler := httptransport.NewServer(
-		transport.ConvertEndPoint(svc),
-		transport.DecodeConvertRequest,
-		transport.EncodeConvertResponse,
+		transport.ConvertFiatEndPoint(svc),
+		transport.DecodeConvertFiatRequest,
+		transport.EncodeConvertFiatResponse,
 	)
 	historyHandler := httptransport.NewServer(
 		transport.HistoryEndpoint(svc),
@@ -86,7 +117,7 @@ func main() {
 		transport.EncodeHistoryResponse,
 	)
 
-	http.Handle("/fetch", fetchExchangeRateHandler)
+	http.Handle("/fetch", FetchFiatRateHandler)
 	http.Handle("/convert", convertHandler)
 	http.Handle("/history", historyHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))

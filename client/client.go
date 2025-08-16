@@ -10,21 +10,24 @@ import (
 )
 
 // APIClient encapsulates all logic for making HTTP requests to the external API.
-// It holds its own dependencies (baseURL, apiKey, and http client).
+// It holds its own dependencies (baseURL, fiatapikey, and http client).
 type APIClient struct {
-	baseURL string
-	apiKey  string
-	client  *http.Client
+	fiatURL      string
+	cryptoURL    string
+	fiatapikey   string
+	cryptoapikey string // This can be used for future crypto-related requests.
+	client       *http.Client
 }
 
 // NewAPIClient is a constructor that creates and returns a new APIClient instance.
 // This is where all dependencies are injected.
-func NewAPIClient(baseURL, apiKey string) *APIClient {
+func NewAPIClient(fiatURL, cryptoURL, fiatapikey, cryptoapikey string) *APIClient {
 	return &APIClient{
-		baseURL: baseURL,
-		apiKey:  apiKey,
-		// The http.Client is created once here and reused for all requests.
-		client: &http.Client{Timeout: 10 * time.Second},
+		fiatURL:      fiatURL,
+		cryptoURL:    cryptoURL,
+		fiatapikey:   fiatapikey,
+		cryptoapikey: cryptoapikey,
+		client:       &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
@@ -33,7 +36,6 @@ func NewAPIClient(baseURL, apiKey string) *APIClient {
 func (c *APIClient) Get(ctx context.Context, requestURL string) ([]byte, error) {
 	fmt.Println("Request URL:", requestURL)
 
-	
 	req, err := http.NewRequestWithContext(ctx, "GET", requestURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new request: %w", err)
@@ -60,13 +62,13 @@ func (c *APIClient) Get(ctx context.Context, requestURL string) ([]byte, error) 
 }
 
 // BuildLiveURL constructs the URL for a live exchange rate request.
-// It is now a method of APIClient and uses the encapsulated baseURL and apiKey.
+// It is now a method of APIClient and uses the encapsulated baseURL and fiatapikey.
 func (c *APIClient) BuildLiveURL(endpoint, baseCurrency string) string {
-	return fmt.Sprintf("%s%s?access_key=%s&source=%s", c.baseURL, endpoint, c.apiKey, baseCurrency)
+	return fmt.Sprintf("%s%s?access_key=%s&source=%s", c.fiatURL, endpoint, c.fiatapikey, baseCurrency)
 }
 
 // BuildHistoryURL constructs the URL for a historical data request.
-// It is now a method of APIClient and uses the encapsulated baseURL and apiKey.
+// It is now a method of APIClient and uses the encapsulated baseURL and fiatapikey.
 func (c *APIClient) BuildHistoryURL(startDate, endDate string, currencies map[string]struct{}) string {
 	var currency_slice []string
 	for currency := range currencies {
@@ -75,5 +77,9 @@ func (c *APIClient) BuildHistoryURL(startDate, endDate string, currencies map[st
 	currenciesStr := strings.Join(currency_slice, ",")
 
 	return fmt.Sprintf("%s/timeframe?access_key=%s&currencies=%s&start_date=%s&end_date=%s",
-		c.baseURL, c.apiKey, currenciesStr, startDate, endDate)
+		c.fiatURL, c.fiatapikey, currenciesStr, startDate, endDate)
+}
+
+func (c *APIClient) BuildCryptoUrl(endpoint string) string {
+	return fmt.Sprintf("%s%s?access_key=%s", c.cryptoURL, endpoint, c.cryptoapikey)
 }

@@ -12,11 +12,11 @@ import (
 	"github.com/pavankalyan767/exchange-rate-service/types"
 )
 
-func FetchExchangeRateEndPoint(svc *service.ExchangeRateServiceImpl) endpoint.Endpoint {
+func FetchFiatRateEndpoint(svc *service.ExchangeRateServiceImpl) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(types.FetchRateRequest)
 		ctx := context.Background()
-		rate, err := svc.FetchExchangeRate(ctx, req)
+		rate, err := svc.FetchRate(ctx, &req)
 		if err != nil {
 			a := &types.FetchRateResponse{Rate: rate, Error: err.Error()}
 			return a, nil
@@ -25,7 +25,7 @@ func FetchExchangeRateEndPoint(svc *service.ExchangeRateServiceImpl) endpoint.En
 	}
 }
 
-func DecodeFetchExchangeRateRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeFetchFiatRateRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var request types.FetchRateRequest
 
 	// Read the entire body into a byte slice
@@ -40,6 +40,6 @@ func DecodeFetchExchangeRateRequest(_ context.Context, r *http.Request) (interfa
 	return request, nil
 }
 
-func EncodeFetchExchangeRateResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+func EncodeFetchFiatRateResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	return json.NewEncoder(w).Encode(response)
 }

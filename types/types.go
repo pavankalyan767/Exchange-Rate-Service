@@ -1,6 +1,6 @@
 package types
 
-// FetchExchangeRate types
+// FetchFiatRate types
 type FetchRateRequest struct {
 	BaseCurrency   string `json:"base_currency" schema:"base_currency"`
 	TargetCurrency string `json:"target_currency"schema:"target_currency"`
@@ -20,7 +20,7 @@ type ConvertRequest struct {
 	Amount         float64 `json:"amount" schema:"amount"`
 }
 
-// ConvertResponse defines the structure for a currency conversion response.
+// ConvertFiatResponse defines the structure for a currency conversion response.
 type ConvertResponse struct {
 	ConvertedAmount float64 `json:"convertedAmount"`
 	Error           string  `json:"error,omitempty"`
@@ -38,3 +38,7 @@ type HistoryResponse struct {
 	Rates map[string]float64 `json:"rates"`
 	Error string             `json:"err,omitempty"`
 }
+
+
+
+
