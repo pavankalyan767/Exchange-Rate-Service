@@ -78,7 +78,7 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 }
 
 // GetLiveRate retrieves a live rate and returns it as a float64.
-func (c *Cache) GetLiveRate(date string, currencyPair string) (float64, bool) {
+func (c *Cache) GetRateWithDate(date string, currencyPair string) (float64, bool) {
 	// First, retrieve the entire map of rates for the given date.
 	val, ok := c.Get(date)
 	if !ok {
@@ -101,17 +101,4 @@ func (c *Cache) GetLiveRate(date string, currencyPair string) (float64, bool) {
 }
 
 // GetHistoryRates retrieves historical rates and returns them as a map.
-func (c *Cache) GetHistoryRates(key string) (map[string]float64, bool) {
-	val, ok := c.Get(key)
-	if !ok {
-		return nil, false
-	}
-	// The type assertion is now handled inside the cache package.
-	rates, ok := val.(map[string]float64)
-	if !ok {
-		// Handle the case where the type is incorrect.
-		fmt.Printf("Error: Value for key '%s' is not a map[string]float64.\n", key)
-		return nil, false
-	}
-	return rates, true
-}
+
