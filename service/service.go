@@ -2,24 +2,29 @@ package service
 
 import (
 	"context"
-	"errors"
-	"time"
 
+	"github.com/pavankalyan767/exchange-rate-service/cache"
 	"github.com/pavankalyan767/exchange-rate-service/types"
 )
 
 type ExchangeRateService interface {
-	FetchExchangeRate(ctx context.Context, request types.FetchExchangeRateRequest) (float64, error)
-	ConvertCurrency(ctx context.Context, amount float64, baseCurrency string, targetCurrency string, date *time.Time) (float64, error)
-	UpdateExchangeRate(ctx context.Context, baseCurrency string, targetCurrency string, rate float64) error
+	FetchExchangeRate(ctx context.Context, request types.FetchRateRequest) (float64, error)
+	Convert(ctx context.Context, request types.ConvertRequest) (float64, error)
+
+	History(ctx context.Context, request types.HistoryRequest) (float64, error)
+	
 }
 
-type ExchangeRateServiceImpl struct{}
-
-func (s *ExchangeRateServiceImpl) ConvertCurrency(ctx context.Context, amount float64, baseCurrency string, targetCurrency string, date *time.Time) (float64, error) {
-	return 0, errors.New("not implemented")
+type ExchangeRateServiceImpl struct{
+	cache *cache.Cache
 }
 
-func (s *ExchangeRateServiceImpl) UpdateExchangeRate(ctx context.Context, baseCurrency string, targetCurrency string, rate float64) error {
-	return errors.New("not implemented")
+func NewExchangeRateServiceImpl(c *cache.Cache) *ExchangeRateServiceImpl {
+	return &ExchangeRateServiceImpl{
+		cache: c,
+	}
+	
 }
+
+
+

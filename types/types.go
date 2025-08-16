@@ -1,27 +1,40 @@
 package types
 
-import "time"
-
 // FetchExchangeRate types
-type FetchExchangeRateRequest struct {
-	BaseCurrency   string `json:"baseCurrency"`
-	TargetCurrency string `json:"targetCurrency"`
+type FetchRateRequest struct {
+	BaseCurrency   string `json:"base_currency" schema:"base_currency"`
+	TargetCurrency string `json:"target_currency"schema:"target_currency"`
+	Date           string `json:"date"`
 }
 
-type FetchExchangeRateResponse struct {
+type FetchRateResponse struct {
 	Rate  float64 `json:"rate"`
 	Error string  `json:"err,omitempty"`
 }
 
 // Convert types
 type ConvertRequest struct {
-	From   string    `json:"from"`
-	To     string    `json:"to"`
-	Amount float64   `json:"amount"`
-	Date   time.Time `json:"date"`
+	BaseCurrency   string  `json:"base_currency" schema:"base_currency"`
+	TargetCurrency string  `json:"target_currency" schema:"target_currency"`
+	Date           string  `json:"date" schema:"date"`
+	Amount         float64 `json:"amount" schema:"amount"`
 }
 
+// ConvertResponse defines the structure for a currency conversion response.
 type ConvertResponse struct {
-	Amount float64 `json:"amount"`
-	Error  string  `json:"err,omitempty"`
+	ConvertedAmount float64 `json:"convertedAmount"`
+	Error           string  `json:"error,omitempty"`
+}
+
+// History types
+type HistoryRequest struct {
+	BaseCurrency   string `json:"base_currency" schema:"base_currency"`
+	TargetCurrency string `json:"target_currency" schema:"target_currency"`
+	From           string `json:"from" schema:"from"`
+	To             string `json:"to"schema:"to"`
+}
+
+type HistoryResponse struct {
+	Rates map[string]float64 `json:"rates"`
+	Error string             `json:"err,omitempty"`
 }

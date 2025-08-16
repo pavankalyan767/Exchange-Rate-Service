@@ -1,75 +1,52 @@
 package service
+
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"github.com/pavankalyan767/exchange-rate-service/types"
-	"net/http"
-	"os"
 	"fmt"
 	"time"
-	"io"
+
+	"github.com/pavankalyan767/exchange-rate-service/internal"
+	"github.com/pavankalyan767/exchange-rate-service/types"
 )
 
-type ExchangeRateAPIResponse struct {
-	Result         string  `json:"result"`
-	ConversionRate float64 `json:"conversion_rate"`
-	BaseCode       string  `json:"base_code"`
-	TargetCode     string  `json:"target_code"`
-	Timestamp      int64   `json:"time_last_update_unix"`
-}
-
-func (s *ExchangeRateServiceImpl) FetchExchangeRate(ctx context.Context, request types.FetchExchangeRateRequest) (float64, error) {
-	baseCurrency := request.BaseCurrency
-	targetCurrency := request.TargetCurrency
-	if baseCurrency == "" || targetCurrency == "" {
-		return 0, errors.New("base currency and target currency must be provided")
+func (s *ExchangeRateServiceImpl) FetchExchangeRate(ctx context.Context, request types.FetchRateRequest) (float64, error) {
+	cache := s.cache
+	fmt.Println("inside fetch exchange rate service method", request)
+	if cache == nil {
+		return 0, fmt.Errorf("cache is not initialized")
 	}
 
-	// Create a new HTTP client and set the base URL and bearer token from environment variables.
-	client := &http.Client{Timeout: 10 * time.Second}
-	base_url := os.Getenv("BASE_API_URL")
-	fmt.Println("Base API URL:", base_url)
-	if base_url == "" {
-		return 0, errors.New("base API URL is not set")
+	allowed_currencies := internal.AllowedCurrencies
+
+	_, check1 := allowed_currencies[request.BaseCurrency]
+	if !check1 {
+		return 0, fmt.Errorf("base currency %s is not allowed", request.BaseCurrency)
 	}
 
-	api_key := os.Getenv("API_KEY")
-	if api_key == "" {
-		return 0, errors.New("api key is not set")
+	_, check2 := allowed_currencies[request.TargetCurrency]
+	if !check2 {
+		return 0, fmt.Errorf("target currency %s is not allowed", request.TargetCurrency)
 	}
-
-	request_url := fmt.Sprintf("%s/%s/pair/%s/%s", base_url, api_key, baseCurrency, targetCurrency)
-	req, err := http.NewRequestWithContext(ctx, "GET", request_url, nil)
-	if err != nil {
-		return 0, err
+	date := time.Now().Format(internal.DateFormat)
+	
+	if request.BaseCurrency == "USD" {
+		key := request.BaseCurrency + request.TargetCurrency
+		
+		rate, exists := cache.GetLiveRate(date, key)
+		
+		if exists {
+			return rate, nil
+		}
+	} else {
+		key1 := "USD" + request.BaseCurrency
+		key2 := "USD" + request.TargetCurrency
+		rate1, exists1 := cache.GetLiveRate(date, key1)
+		rate2, exists2 := cache.GetLiveRate(date, key2)
+		if exists1 && exists2 {
+			rate := rate2 / rate1
+			return rate, nil
+		}
 	}
+	return 0, fmt.Errorf("exchange rate not found for %s to %s", request.BaseCurrency, request.TargetCurrency)
 
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return 0, errors.New("failed to fetch exchange rate from API")
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, err
-	}
-
-	// Log the response body for debugging purposes.
-	var apiResponse ExchangeRateAPIResponse
-	err = json.Unmarshal(body, &apiResponse)
-
-	if err != nil {
-		return 0, fmt.Errorf("error parsing API response: %v", err)
-	}
-	fmt.Println("API Response:", apiResponse)
-
-	rate := apiResponse.ConversionRate
-	return rate, nil
 }

@@ -1,11 +1,10 @@
-package main
+package cache
 
 import (
 	"fmt"
 	"sync"
 	"time"
 )
-
 
 type Cache struct {
 	data        map[string]interface{}
@@ -19,7 +18,7 @@ type Cache struct {
 // can be used for both live and historical data.
 func NewCache(defaultTTL, cleanupTick time.Duration) *Cache {
 	cache := &Cache{
-		data:        make(map[string]interface{}), 
+		data:        make(map[string]interface{}),
 		expiration:  make(map[string]time.Time),
 		defaultTTL:  defaultTTL,
 		cleanupTick: cleanupTick,
@@ -30,7 +29,7 @@ func NewCache(defaultTTL, cleanupTick time.Duration) *Cache {
 	return cache
 }
 
-// background goroutine that periodically cleanup expired items .
+// background goroutine that periodically cleansup expired items .
 func (c *Cache) startCleanup() {
 	ticker := time.NewTicker(c.cleanupTick)
 	for {
@@ -79,19 +78,26 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 }
 
 // GetLiveRate retrieves a live rate and returns it as a float64.
-func (c *Cache) GetLiveRate(key string) (float64, bool) {
-	val, ok := c.Get(key)
+func (c *Cache) GetLiveRate(date string, currencyPair string) (float64, bool) {
+	// First, retrieve the entire map of rates for the given date.
+	val, ok := c.Get(date)
 	if !ok {
+		// No data found for this date.
 		return 0, false
 	}
-	// interface to float64 type assertion
-	rate, ok := val.(float64)
+
+	// Now, perform a type assertion to get the map of rates.
+	ratesMap, ok := val.(map[string]float64)
 	if !ok {
-		// Handle the case where the type is incorrect.
-		fmt.Printf("Error: Value for key '%s' is not a float64.\n", key)
+		// The cached value is not a map[string]float64. This indicates a data integrity issue.
+		fmt.Printf("Error: Value for date '%s' is not a map[string]float64.\n", date)
 		return 0, false
 	}
-	return rate, true
+
+	// Finally, get the specific currency pair from the map.
+	rate, ok := ratesMap[currencyPair]
+	fmt.Println("Retrieved rate:", rate, "for currency pair:", currencyPair)
+	return rate, ok
 }
 
 // GetHistoryRates retrieves historical rates and returns them as a map.
