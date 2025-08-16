@@ -9,7 +9,7 @@ import (
 	"github.com/pavankalyan767/exchange-rate-service/types"
 )
 
-func (s *ExchangeRateServiceImpl) History(ctx context.Context, request types.HistoryRequest) (map[string]float64, error) {
+func (s *ExchangeRateServiceImpl) History(ctx context.Context, request *types.HistoryRequest) (map[string]float64, error) {
 	cache := s.fiatcache
 	if cache == nil {
 		return nil, fmt.Errorf("cache is not initialized")

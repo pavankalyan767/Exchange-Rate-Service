@@ -10,7 +10,7 @@ import (
 
 
 
-func (s *ExchangeRateServiceImpl) FetchRate(ctx context.Context, req *types.FetchRateRequest) (float64, error) {
+func (s *ExchangeRateServiceImpl) FetchRate(ctx context.Context, req *types.FetchRateRequest) (output float64, err error) {
 	// Validate the input currencies
 	if !internal.IsAllowedCurrency(req.BaseCurrency) || !internal.IsAllowedCurrency(req.TargetCurrency) {
 		return 0, fmt.Errorf("invalid currency: %s or %s", req.BaseCurrency, req.TargetCurrency)

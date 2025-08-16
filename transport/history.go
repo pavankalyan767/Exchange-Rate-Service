@@ -2,7 +2,6 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -12,11 +11,11 @@ import (
 	"github.com/pavankalyan767/exchange-rate-service/types"
 )
 
-func HistoryEndpoint(svc *service.ExchangeRateServiceImpl) endpoint.Endpoint {
+func HistoryEndpoint(svc service.ExchangeRateService) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(types.HistoryRequest)
 		ctx := context.Background()
-		rates, err := svc.History(ctx, req)
+		rates, err := svc.History(ctx, &req)
 		if err != nil {
 			a := &types.HistoryResponse{Rates: rates, Error: err.Error()}
 			return a, nil
@@ -38,8 +37,4 @@ func DecodeHistoryRequest(_ context.Context, r *http.Request) (interface{}, erro
 
 	fmt.Println("the request after decoding it", request)
 	return request, nil
-}
-
-func EncodeHistoryResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
-	return json.NewEncoder(w).Encode(response)
 }

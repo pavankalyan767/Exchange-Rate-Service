@@ -2,7 +2,6 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -12,7 +11,7 @@ import (
 	"github.com/pavankalyan767/exchange-rate-service/types"
 )
 
-func ConvertFiatEndPoint(svc *service.ExchangeRateServiceImpl) endpoint.Endpoint {
+func ConvertEndpoint(svc service.ExchangeRateService) endpoint.Endpoint {
 	fmt.Println("inside convert endpoint")
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(types.ConvertRequest)
@@ -27,7 +26,7 @@ func ConvertFiatEndPoint(svc *service.ExchangeRateServiceImpl) endpoint.Endpoint
 	}
 }
 
-func DecodeConvertFiatRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeConvertRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	fmt.Println("inside decode convert request")
 	var request types.ConvertRequest
 	decoder := schema.NewDecoder()
@@ -39,8 +38,4 @@ func DecodeConvertFiatRequest(_ context.Context, r *http.Request) (interface{}, 
 
 	fmt.Println("the request after decoding it", request)
 	return request, nil
-}
-
-func EncodeConvertFiatResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
-	return json.NewEncoder(w).Encode(response)
 }
