@@ -3,9 +3,6 @@
 
 <img width="1549" height="948" alt="image" src="https://github.com/user-attachments/assets/1719963c-e0a4-4838-b99c-6c964df926b4" />
 
-Sure! Here's your **Performance Test Report** converted into well-formatted **Markdown**, with a clean structure and table formatting:
-
----
 
 # 📈 Performance Test Report: Exchange Rate Service
 
@@ -51,7 +48,5 @@ The service demonstrated **exceptional performance under heavy load**. The major
 
 This data confirms the service's ability to maintain **high performance and reliability**, even under extreme conditions.
 
----
 
-Let me know if you'd like this exported to a `.md` file or if you want a graph/visual version too.
 
