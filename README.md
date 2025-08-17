@@ -1,4 +1,133 @@
 # Exchange Rate Service
+
+A high-performance currency exchange rate service built with Go and Go-Kit framework, featuring real-time exchange rates, currency conversion, and comprehensive monitoring.
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker and Docker Compose
+- Go 1.21+ (for local development)
+
+### Running the Project
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd exchange-rate-service
+   ```
+
+2. **Setup environment configuration**
+   ```bash
+   cp .env.example .env
+   ```
+## Pleaes use the API keys , mentioned below , for convenience , since this is a private repo , i've made them available in the readme 
+## or you can get new api keys at https://api.exchangerate.host/ , http://api.coinlayer.com/
+3. **Enter your API keys in `.env` file**
+   ```bash
+   # Edit .env file and add your API keys
+   
+  FIAT_API_KEY=032b7d9d9fb6d0029737824b9fc3b43d
+  FIAT_API_URL=https://api.exchangerate.host/
+  CRYPTO_API_URL=http://api.coinlayer.com/
+  CRYPTO_API_KEY=fed5a907404a4c87d6f3608dd891e589
+   
+
+
+4. **Start the entire stack with Docker Compose**
+   ```bash
+   docker compose up --build -d
+   ```
+   This command will:
+   - Pull Grafana and Prometheus images
+   - Build the exchange rate service
+   - Start all services in detached mode
+
+5. **Verify services are running**
+   - **Exchange Rate Service**: http://localhost:8080
+   - **Prometheus**: http://localhost:9000
+   - **Grafana**: http://localhost:3000 (admin/admin)
+   - data source for grafana http://prom-server:9090
+
+## 📡 API Testing
+
+### Test the Service Endpoints
+
+#### Exchange Rate Fetching
+```bash
+# Fiat to Fiat conversion
+curl "http://localhost:8080/fetch?base_currency=USD&target_currency=INR"
+
+# Cryptocurrency conversion  
+curl "http://localhost:8080/fetch?base_currency=BTC&target_currency=ETH"
+
+# Mixed currency conversion
+curl "http://localhost:8080/fetch?base_currency=USD&target_currency=BTC"
+
+# Historical rate lookup
+curl "http://localhost:8080/fetch?base_currency=USD&target_currency=INR&date=2025-08-01"
+```
+
+#### Amount Conversion
+```bash
+# Convert 100 USD to INR
+curl "http://localhost:8080/convert?base_currency=USD&target_currency=INR&amount=100"
+
+# Convert cryptocurrency amounts
+curl "http://localhost:8080/convert?base_currency=BTC&target_currency=ETH&amount=0.5"
+
+# Mixed currency conversion
+curl "http://localhost:8080/convert?base_currency=ETH&target_currency=USD&amount=1.25"
+```
+
+#### Historical Data Retrieval
+```bash
+# Get historical rates for a date range
+curl "http://localhost:8080/history?base_currency=USD&target_currency=INR&from=2025-07-14&to=2025-08-14"
+
+# Monthly historical data
+curl "http://localhost:8080/history?base_currency=EUR&target_currency=GBP&from=2025-07-01&to=2025-07-31"
+```
+
+## 📊 Monitoring & Observability
+
+- **Prometheus Metrics**: http://localhost:9090/query
+- **Grafana Dashboards**: http://localhost:3000 (Login: admin/admin)
+
+### Key Metrics Available
+- Request count and latency
+- Cache hit rates
+- External API response times
+- System resource utilization
+
+## 🧪 Testing
+
+The project includes comprehensive testing covering:
+
+### Cache Testing
+- In-memory cache performance and reliability
+- TTL management and automatic cleanup
+- Thread-safe operations under concurrent load
+
+### Conversion Testing
+- Currency conversion accuracy
+- Cross-currency calculations (Fiat-to-Fiat, Crypto-to-Crypto, Mixed)
+- Historical rate conversions
+
+### Running Tests
+```bash
+# Run all tests
+make test
+
+# Run with coverage
+make test-coverage
+
+# Run specific test suite
+go test ./service/... -v
+```
+
+---
+
+# Exchange Rate Service
 ## Final Project Submission
 
 **Technologies:** Go • Go-Kit • Docker • Prometheus • Grafana • Production Ready
@@ -7,16 +136,17 @@
 
 ## Table of Contents
 
-1. Executive Summary
-2. Requirements Achievement
-3. System Architecture & Design
-4. Key Features Implementation
-5. Performance Analysis
-6. API Documentation
-7. Testing & Quality Assurance
-8. Deployment & Operations
-9. Monitoring & Observability
-10. Technical Decisions
+1. [Executive Summary](#1-executive-summary)
+2. [Requirements Achievement](#2-requirements-achievement)
+3. [System Architecture & Design](#3-system-architecture--design)
+4. [Project Structure](#project-structure)
+5. [Key Features Implementation](#4-key-features-implementation)
+6. [Performance Analysis](#5-performance-analysis)
+7. [API Documentation](#6-api-documentation)
+8. [Testing & Quality Assurance](#7-testing--quality-assurance)
+9. [Deployment & Operations](#8-deployment--operations)
+10. [Monitoring & Observability](#9-monitoring--observability)
+11. [Technical Decisions](#10-technical-decisions)
 
 ---
 
@@ -98,6 +228,82 @@ The system follows clean architecture principles with clear separation of concer
 
 ---
 
+## Project Structure
+
+```
+pavan:exchange-rate-service/ (main*)
+.
+├── bin
+│   └── rate-exchange-service
+├── cache
+│   └── cache.go
+├── client
+│   └── client.go
+├── docker-compose.yml
+├── Dockerfile
+├── go.mod
+├── go.sum
+├── internal
+│   └── constants.go
+├── main.go
+├── Makefile
+├── prometheus.yml
+├── service
+│   ├── convert.go
+│   ├── exchange_service_test.go
+│   ├── fetch.go
+│   ├── history.go
+│   ├── middleware.go
+│   ├── rate_fetcher.go
+│   └── service.go
+├── tmp
+│   ├── build-errors.log
+│   └── main
+├── transport
+│   ├── convert.go
+│   ├── fetch.go
+│   ├── history.go
+│   ├── middleware.go
+│   └── transport.go
+└── types
+    └── types.go
+
+9 directories, 26 files
+```
+
+### Directory Structure Overview
+
+| Directory | Purpose | Key Files |
+|-----------|---------|-----------|
+| `/bin` | Compiled binary output | rate-exchange-service executable |
+| `/cache` | Caching implementation | cache.go - In-memory cache with TTL management |
+| `/client` | External API client | client.go - HTTP client for external APIs |
+| `/internal` | Internal configuration | constants.go - Currency definitions and configuration |
+| `/service` | Business logic layer | Core service implementations and tests |
+| `/transport` | HTTP transport layer | Go-Kit HTTP handlers and middleware |
+| `/types` | Type definitions | Shared data structures and interfaces |
+
+### Currency Configuration
+
+The system currently supports only the currencies specified in the requirements document:
+
+**Supported Fiat Currencies:**
+- USD (United States Dollar)
+- INR (Indian Rupee)  
+- EUR (Euro)
+- JPY (Japanese Yen)
+- GBP (British Pound Sterling)
+
+**Supported Cryptocurrencies:**
+- BTC (Bitcoin)
+- ETH (Ethereum)
+- USDT (Tether)
+
+**Adding New Currencies:**
+To add support for additional currencies, simply update the currency constants in `internal/constants.go`. The system is designed to be easily extensible - new currencies can be added by including their currency codes in the appropriate constant maps without requiring changes to the core business logic.
+
+---
+
 ## 4. Key Features Implementation
 
 ### Universal Currency Conversion
@@ -169,45 +375,46 @@ The Grafana dashboard shows comprehensive performance metrics including request 
 | /convert | Convert amounts between currencies | All combinations | Amount conversion, date-specific rates, precision handling |
 | /history | Historical rates for date ranges | Fiat currencies only | 90-day lookback, date validation, range queries |
 
-### Usage Examples
+### Response Examples
 
-#### Exchange Rate Fetching
-
-```bash
-# Fiat to Fiat conversion
-curl "http://localhost:8080/fetch?base_currency=USD&target_currency=INR"
-
-# Cryptocurrency conversion  
-curl "http://localhost:8080/fetch?base_currency=BTC&target_currency=ETH"
-
-# Mixed currency conversion
-curl "http://localhost:8080/fetch?base_currency=USD&target_currency=BTC"
-
-# Historical rate lookup
-curl "http://localhost:8080/fetch?base_currency=USD&target_currency=INR&date=2025-08-01"
+#### /fetch Endpoint Response
+```json
+{
+  "base_currency": "USD",
+  "target_currency": "INR",
+  "rate": 83.25,
+  "date": "2025-08-17"
+}
 ```
 
-#### Amount Conversion
-
-```bash
-# Convert 100 USD to INR
-curl "http://localhost:8080/convert?base_currency=USD&target_currency=INR&amount=100"
-
-# Convert cryptocurrency amounts
-curl "http://localhost:8080/convert?base_currency=BTC&target_currency=ETH&amount=0.5"
-
-# Mixed currency conversion
-curl "http://localhost:8080/convert?base_currency=ETH&target_currency=USD&amount=1.25"
+#### /convert Endpoint Response
+```json
+{
+  "base_currency": "USD",
+  "target_currency": "INR",
+  "amount": 100,
+  "converted_amount": 8325.00,
+  "rate": 83.25,
+  "date": "2025-08-17"
+}
 ```
 
-#### Historical Data Retrieval
-
-```bash
-# Get historical rates for a date range
-curl "http://localhost:8080/history?base_currency=USD&target_currency=INR&from=2025-07-14&to=2025-08-14"
-
-# Monthly historical data
-curl "http://localhost:8080/history?base_currency=EUR&target_currency=GBP&from=2025-07-01&to=2025-07-31"
+#### /history Endpoint Response
+```json
+{
+  "base_currency": "USD",
+  "target_currency": "INR",
+  "rates": [
+    {
+      "date": "2025-08-01",
+      "rate": 83.15
+    },
+    {
+      "date": "2025-08-02",
+      "rate": 83.22
+    }
+  ]
+}
 ```
 
 ---
@@ -219,9 +426,23 @@ curl "http://localhost:8080/history?base_currency=EUR&target_currency=GBP&from=2
 | Test Type | Coverage | Purpose |
 |-----------|----------|---------|
 | Unit Tests | Core business logic | Validate conversion algorithms, cache operations, error handling |
-| Integration Tests | API endpoints | End-to-end request/response validation with mock data |
-| Performance Tests | Load handling | Concurrency testing with high concurrent users |
+| Cache Testing | In-memory cache functionality | TTL management, thread safety, performance under load |
+| Conversion Testing | Currency conversion accuracy | Cross-currency calculations, precision handling |
 | Edge Case Testing | Error conditions | Invalid currencies, date ranges, network failures |
+
+### Implemented Test Coverage
+
+#### Cache Testing
+- **TTL Management**: Verifies automatic expiration of cached data
+- **Thread Safety**: Concurrent access testing with multiple goroutines
+- **Cache Hit/Miss**: Performance validation for cache efficiency
+- **Cleanup Operations**: Automatic removal of expired entries
+
+#### Conversion Testing
+- **Accuracy Validation**: Mathematical precision in currency conversions
+- **Cross-Currency Logic**: USD-based conversion chain validation
+- **Historical Conversions**: Date-specific rate applications
+- **Error Scenarios**: Invalid currency pairs and amounts
 
 ### Quality Assurance Measures
 
@@ -246,11 +467,30 @@ curl "http://localhost:8080/history?base_currency=EUR&target_currency=GBP&from=2
 
 ### Deployment Features
 
-- **One-Command Deployment:** `docker compose up --build` starts entire stack
-- **Environment Configuration:** Externalized API keys and endpoints
+- **One-Command Deployment:** `docker compose up --build -d` starts entire stack
+- **Environment Configuration:** Externalized API keys and endpoints via `.env` file
 - **Service Discovery:** Internal Docker networking for service communication
-- **Volume Management:** Persistent storage for Grafana dashboards
+- **Volume Management:** Persistent storage for Grafana dashboards and Prometheus data
 - **Development Workflow:** Hot reloading and easy debugging setup
+
+### Make Commands
+
+```bash
+# Build the application
+make build
+
+# Run tests
+make test
+
+# Run with hot reload
+make dev
+
+# Clean build artifacts
+make clean
+
+# Run load testing
+make load-test
+```
 
 ---
 
@@ -272,6 +512,13 @@ curl "http://localhost:8080/history?base_currency=EUR&target_currency=GBP&from=2
 - **Structured Logging:** Comprehensive logging with contextual information
 - **Health Checks:** Endpoint monitoring and dependency verification
 - **Performance Tracking:** Real-time latency and throughput monitoring
+
+### Available Dashboards
+
+1. **Service Overview**: Request rates, response times, error rates
+2. **System Metrics**: CPU, memory, goroutine usage
+3. **Cache Performance**: Hit rates, TTL effectiveness
+4. **External API Health**: Third-party service monitoring
 
 ---
 
@@ -297,8 +544,40 @@ curl "http://localhost:8080/history?base_currency=EUR&target_currency=GBP&from=2
 
 ---
 
-## Conclusion
+## 📝 Development Setup
 
-The Exchange Rate Service successfully delivers on all project requirements while exceeding performance expectations. The solution demonstrates production-ready architecture with comprehensive monitoring, robust error handling, and excellent performance characteristics. The implementation showcases clean code practices, thorough testing, and operational excellence suitable for enterprise deployment.
+### Local Development
 
-Key achievements include complete feature coverage, sub-second response times, zero error rates under load, and comprehensive observability. The system is designed for scalability and maintainability, making it ready for production deployment and future enhancements.
+```bash
+# Install dependencies
+go mod download
+
+# Run locally with hot reload
+make dev
+
+# Build binary
+make build
+
+# run with hot reloading
+make serve
+
+# Run tests
+go test ./service
+```
+
+### Environment Variables
+
+```bash
+# .env file example
+EXCHANGE_RATE_API_KEY=your_api_key_here
+COINLAYER_API_KEY=your_coinlayer_api_key
+PORT=8080
+LOG_LEVEL=info
+CACHE_TTL=3600
+
+```
+
+---
+
+
+
