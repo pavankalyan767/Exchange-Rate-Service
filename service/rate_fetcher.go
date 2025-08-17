@@ -11,19 +11,22 @@ import (
 	"github.com/pavankalyan767/exchange-rate-service/cache"
 	"github.com/pavankalyan767/exchange-rate-service/client"
 	"github.com/pavankalyan767/exchange-rate-service/internal"
+	"github.com/go-kit/log"
 )
 
 type RateFetcher struct {
 	apiClient   *client.APIClient
 	fiatcache   *cache.Cache
 	cryptocache *cache.Cache
+	logger 		log.Logger
 }
 
-func NewRateFetcher(apiClient *client.APIClient, fiatcache *cache.Cache, cryptocache *cache.Cache) *RateFetcher {
+func NewRateFetcher(apiClient *client.APIClient, fiatcache *cache.Cache, cryptocache *cache.Cache,logger log.Logger) *RateFetcher {
 	return &RateFetcher{
 		apiClient:   apiClient,
 		fiatcache:   fiatcache,
 		cryptocache: cryptocache,
+		logger:		logger,
 	}
 }
 
@@ -44,7 +47,7 @@ type CryptoRateAPIResponse struct {
 func (rf *RateFetcher) LiveRate(ctx context.Context) error {
 
 	endpoint := "live"
-	baseCurrency := "USD"
+	baseCurrency := internal.BaseCurrency
 
 	request_url := rf.apiClient.BuildLiveURL(endpoint, baseCurrency)
 
@@ -79,7 +82,7 @@ func (rf *RateFetcher) LiveRate(ctx context.Context) error {
 
 	// Cache the entire map of today's rates using the date as the key.
 	rf.fiatcache.Set(today, exchangeRate, 24*time.Hour)
-	fmt.Println("Live rates cached successfully")
+	rf.logger.Log("Live rates cached successfully")
 
 	return nil
 
@@ -88,7 +91,7 @@ func (rf *RateFetcher) LiveRate(ctx context.Context) error {
 func (rf *RateFetcher) HistoricalRate(ctx context.Context) error {
 
 	startDate := time.Now().AddDate(0, 0, -1*internal.LookbackDays).Format(internal.DateFormat)
-	endDate := time.Now().AddDate(0, 0, -1).Format(internal.DateFormat)
+	endDate := time.Now().AddDate(0, 0, 0).Format(internal.DateFormat)
 	request_url := rf.apiClient.BuildHistoryURL(startDate, endDate, internal.AllowedFiatCurrencies)
 
 	resp, err := rf.apiClient.Get(ctx, request_url)
@@ -100,13 +103,15 @@ func (rf *RateFetcher) HistoricalRate(ctx context.Context) error {
 	if err := json.Unmarshal(resp, &historyRateResponse); err != nil {
 		return fmt.Errorf("error unmarshalling historical rate response: %v", err)
 	}
+	rf.logger.Log("Historical rate response:", historyRateResponse)
 
 	Quotes := historyRateResponse.Quotes
 
 	for date, rates := range Quotes {
+		
 		rf.fiatcache.Set(date, rates, 24*90*time.Hour)
 	}
-	fmt.Println("Historical rates cached successfully")
+	rf.logger.Log("Historical rates cached successfully")
 
 	return nil
 
@@ -133,26 +138,21 @@ func (rf *RateFetcher) CryptoRate(ctx context.Context) error {
 
 	exchangeRate := make(map[string]float64)
 
-	currencies := internal.AllowedCryptoCurrencies
 
-	for currency := range currencies {
 
-		exchangeRate[currency] = 0
-
-	}
 	for key, value := range cryptoRateAPIResponse.Rates {
 
 		if _, exists := internal.AllowedCryptoCurrencies[key]; exists {
-			exchangeRate["USD"+key] = value
+			exchangeRate[key+internal.BaseCurrency] = value
 		}
 	}
-	fmt.Println("Exchange Rate:", exchangeRate)
+	rf.logger.Log("Exchange Rate:", exchangeRate)
 
 	today := time.Now().Format(internal.DateFormat)
 
 	// Cache the entire map of today's rates using the date as the key.
 	rf.cryptocache.Set(today, exchangeRate, 24*time.Hour)
-	fmt.Println("Live rates cached successfully")
+	rf.logger.Log("Live rates for crypto cached successfully")
 
 	return nil
 }

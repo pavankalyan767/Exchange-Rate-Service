@@ -3,7 +3,6 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -36,7 +35,6 @@ func DecodeFetchRateRequest(_ context.Context, r *http.Request) (interface{}, er
 
 	// Now decode from the byte slice
 
-	fmt.Println("the request after decoding it", request)
 	return request, nil
 }
 

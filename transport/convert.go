@@ -12,11 +12,11 @@ import (
 )
 
 func ConvertEndpoint(svc service.ExchangeRateService) endpoint.Endpoint {
-	fmt.Println("inside convert endpoint")
+	
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(types.ConvertRequest)
 		ctx := context.Background()
-		fmt.Print("the request in convert endpoint: ", req)
+		
 		amount, err := svc.Convert(ctx, &req)
 		if err != nil {
 			a := &types.ConvertResponse{ConvertedAmount: amount, Error: err.Error()}
@@ -27,7 +27,7 @@ func ConvertEndpoint(svc service.ExchangeRateService) endpoint.Endpoint {
 }
 
 func DecodeConvertRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	fmt.Println("inside decode convert request")
+	
 	var request types.ConvertRequest
 	decoder := schema.NewDecoder()
 	if err := decoder.Decode(&request, r.URL.Query()); err != nil {
@@ -36,6 +36,6 @@ func DecodeConvertRequest(_ context.Context, r *http.Request) (interface{}, erro
 
 	// Read the entire body into a byte slice
 
-	fmt.Println("the request after decoding it", request)
+	
 	return request, nil
 }

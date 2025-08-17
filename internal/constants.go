@@ -20,6 +20,7 @@ const (
 
 	// DateFormat is the required date format for historical requests.
 	DateFormat = "2006-01-02"
+	BaseCurrency = "USD"
 )
 
 func IsFiatCurrency(currency string) bool {

@@ -1,9 +1,10 @@
 package cache
 
 import (
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/go-kit/log"
 )
 
 type Cache struct {
@@ -12,16 +13,18 @@ type Cache struct {
 	mutex       sync.RWMutex
 	defaultTTL  time.Duration
 	cleanupTick time.Duration
+	logger      log.Logger
 }
 
 // NewCache is a constructor for the Cache struct.
 // can be used for both live and historical data.
-func NewCache(defaultTTL, cleanupTick time.Duration) *Cache {
+func NewCache(defaultTTL, cleanupTick time.Duration, logger log.Logger) *Cache {
 	cache := &Cache{
 		data:        make(map[string]interface{}),
 		expiration:  make(map[string]time.Time),
 		defaultTTL:  defaultTTL,
 		cleanupTick: cleanupTick,
+		logger:      logger,
 	}
 
 	go cache.startCleanup()
@@ -90,15 +93,14 @@ func (c *Cache) GetRateWithDate(date string, currencyPair string) (float64, bool
 	ratesMap, ok := val.(map[string]float64)
 	if !ok {
 		// The cached value is not a map[string]float64. This indicates a data integrity issue.
-		fmt.Printf("Error: Value for date '%s' is not a map[string]float64.\n", date)
+		c.logger.Log("Error: Value for date '%s' is not a map[string]float64.\n", date)
 		return 0, false
 	}
 
 	// Finally, get the specific currency pair from the map.
 	rate, ok := ratesMap[currencyPair]
-	fmt.Println("Retrieved rate:", rate, "for currency pair:", currencyPair)
+	c.logger.Log("Retrieved rate:", rate, "for currency pair:", currencyPair)
 	return rate, ok
 }
 
 // GetHistoryRates retrieves historical rates and returns them as a map.
-

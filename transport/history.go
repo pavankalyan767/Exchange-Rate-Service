@@ -2,7 +2,6 @@ package transport
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -35,6 +34,5 @@ func DecodeHistoryRequest(_ context.Context, r *http.Request) (interface{}, erro
 
 	// Now decode from the byte slice
 
-	fmt.Println("the request after decoding it", request)
 	return request, nil
 }

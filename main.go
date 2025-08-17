@@ -74,20 +74,19 @@ func main() {
 	}
 
 	// Initialize the API client and caches.
-	apiClient := client.NewAPIClient(fiatUrl, cryptoUrl, fiatapikey, cryptoapikey)
-	fiatCache := cache.NewCache(5*time.Minute, 10*time.Minute)
-	cryptoCache := cache.NewCache(5*time.Minute, 10*time.Minute)
+	apiClient := client.NewAPIClient(fiatUrl, cryptoUrl, fiatapikey, cryptoapikey, logger)
+	fiatCache := cache.NewCache(5*time.Minute, 10*time.Minute,logger)
+	cryptoCache := cache.NewCache(5*time.Minute, 10*time.Minute,logger)
 
 	// Initialize the core service.
 	var svc service.ExchangeRateService
 	svc = service.NewExchangeRateServiceImpl(fiatCache, cryptoCache)
 
-	
 	svc = service.NewLoggingMiddleware(logger, svc)
 	svc = service.NewInstrumentingMiddleware(requestCount, requestLatency, countResult, svc)
 
 	// Initialize the rate fetcher.
-	rate_fetcher := service.NewRateFetcher(apiClient, fiatCache, cryptoCache)
+	rate_fetcher := service.NewRateFetcher(apiClient, fiatCache, cryptoCache,logger)
 
 	// --- Polling Logic ---
 	// Create a single context to manage all background goroutines.
@@ -104,6 +103,13 @@ func main() {
 	logger.Log("message", "Initial fetch of live rates complete.")
 
 	// Start a single background goroutine for hourly polling of both rate types.
+	if err := rate_fetcher.HistoricalRate(ctx); err != nil {
+		logger.Log("Failed to fetch historical rates on startup: %v", err)
+	}
+	if err := rate_fetcher.CryptoRate(ctx); err != nil {
+		logger.Log("Error", fmt.Sprintf("error during hourly crypto rate polling: %v", err))
+	}
+
 	go func() {
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()

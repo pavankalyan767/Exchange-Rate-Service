@@ -42,16 +42,22 @@ func (s *ExchangeRateServiceImpl) getRateForCurrencies(base, target, date string
 	// The rate is (USD->Target) / (USD->Base).
 	if baseIsFiat && targetIsFiat {
 		// Direct lookup for USD to any fiat.
-		if base == "USD" {
-			key := "USD" + target
+		if base == internal.BaseCurrency {
+			key := internal.BaseCurrency + target
 			rate, exists := s.fiatcache.GetRateWithDate(date, key)
 			if exists {
-				return rate, nil
+				return 1/rate, nil
 			}
-		} else {
+		}else if target==internal.BaseCurrency{
+			key := internal.BaseCurrency + base
+			rate,exists := s.fiatcache.GetRateWithDate(date,key)
+			if exists{
+				return 1/rate,nil
+			}
+		}else {
 			// Cross-rate calculation for any fiat to any fiat (e.g., EUR to INR).
-			rateUSDTarget, existsTarget := s.fiatcache.GetRateWithDate(date, "USD"+target)
-			rateUSDBase, existsBase := s.fiatcache.GetRateWithDate(date, "USD"+base)
+			rateUSDTarget, existsTarget := s.fiatcache.GetRateWithDate(date, internal.BaseCurrency+target)
+			rateUSDBase, existsBase := s.fiatcache.GetRateWithDate(date, internal.BaseCurrency+base)
 			if existsTarget && existsBase {
 				if rateUSDBase == 0 {
 					return 0, fmt.Errorf("invalid rate for %s, cannot divide by zero", base)
@@ -64,8 +70,8 @@ func (s *ExchangeRateServiceImpl) getRateForCurrencies(base, target, date string
 	// Case 2: Both currencies are crypto.
 	// The rate is (Base->USD) / (Target->USD).
 	if !baseIsFiat && !targetIsFiat {
-		rateBaseUSD, existsBase := s.cryptocache.GetRateWithDate(date, "USD"+base)
-		rateTargetUSD, existsTarget := s.cryptocache.GetRateWithDate(date, "USD"+target)
+		rateBaseUSD, existsBase := s.cryptocache.GetRateWithDate(date, base+internal.BaseCurrency)
+		rateTargetUSD, existsTarget := s.cryptocache.GetRateWithDate(date, target+internal.BaseCurrency)
 		if existsBase && existsTarget {
 			if rateTargetUSD == 0 {
 				return 0, fmt.Errorf("invalid rate for %s, cannot divide by zero", target)
@@ -75,26 +81,40 @@ func (s *ExchangeRateServiceImpl) getRateForCurrencies(base, target, date string
 	}
 
 	// Case 3: Mixed currencies (fiat to crypto).
-	// The rate is (1 / USD->Base) * (Target->USD).
+	
 	if baseIsFiat && !targetIsFiat {
-		rateUSDTarget, existsFiat := s.fiatcache.GetRateWithDate(date, "USD"+base)
-		rateTargetUSD, existsCrypto := s.cryptocache.GetRateWithDate(date, "USD"+target)
+		var rateUSDTarget float64
+		var existsFiat bool
+		if base != internal.BaseCurrency {
+			rateUSDTarget, existsFiat = s.fiatcache.GetRateWithDate(date, internal.BaseCurrency+base)
+		}else{
+			rateUSDTarget=1
+			existsFiat=true
+		}
+		
+		
+		rateTargetUSD, existsCrypto := s.cryptocache.GetRateWithDate(date, target+internal.BaseCurrency)
 		if existsFiat && existsCrypto {
 			if rateUSDTarget == 0 {
 				return 0, fmt.Errorf("invalid rate for %s, cannot divide by zero", base)
 			}
-			return rateUSDTarget * rateTargetUSD, nil
+			return 1/(rateUSDTarget * rateTargetUSD), nil
 		}
 	}
 
 	// Case 4: Mixed currencies (crypto to fiat).
-	// The rate is (Base->USD) * (USD->Target).
+	
 	if !baseIsFiat && targetIsFiat {
-		rateBaseUSD, existsCrypto := s.cryptocache.GetRateWithDate(date, "USD"+base)
-		rateUSDTarget, existsFiat := s.fiatcache.GetRateWithDate(date, "USD"+target)
+		rateBaseUSD, existsCrypto := s.cryptocache.GetRateWithDate(date, base+internal.BaseCurrency)
+		
+		if target != internal.BaseCurrency {
+		rateUSDTarget, existsFiat := s.fiatcache.GetRateWithDate(date, internal.BaseCurrency+target)
 		if existsCrypto && existsFiat {
 			return rateBaseUSD * rateUSDTarget, nil
+		}}else{
+			return rateBaseUSD,nil
 		}
+		
 	}
 
 	return 0, fmt.Errorf("exchange rate not found for %s to %s on %s", base, target, date)
