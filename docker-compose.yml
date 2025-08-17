@@ -5,16 +5,34 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - 9000:9090
+    networks:
+      - exchange-service-network
 
   grafana:
     image: grafana/grafana-oss
-   
     volumes:
       - grafana-storage:/var/lib/grafana
     depends_on:
       - prom-server  
-    network_mode: host 
+    networks:
+      - exchange-service-network
+    ports:
+      - 3000:3000
+  
+  exchange-rate-service:
+    build: .
+    ports:
+      - "8080:8080"
+    networks:
+      - exchange-service-network
+    volumes:
+      - ./.env:/app/.env
+
+networks:
+  exchange-service-network:
+    driver: bridge
 
 volumes:
   grafana-storage:

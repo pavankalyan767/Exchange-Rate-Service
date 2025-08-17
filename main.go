@@ -25,6 +25,13 @@ func main() {
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 	logger = log.With(logger, "caller", log.DefaultCaller)
 
+	err := godotenv.Load("/app/.env")
+	if err != nil {
+		logger.Log("Error", "failed to load .env file", "err", err)
+		// Exit if environment variables cannot be loaded, as the service won't function.
+		os.Exit(1)
+	}
+
 	fieldKeys := []string{"method", "error"}
 	requestCount := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Namespace: "my_group",
@@ -46,12 +53,7 @@ func main() {
 	}, []string{}) // no fields here
 
 	// Load environment variables from .env file.
-	err := godotenv.Load(".env")
-	if err != nil {
-		logger.Log("Error", "failed to load .env file", "err", err)
-		// Exit if environment variables cannot be loaded, as the service won't function.
-		os.Exit(1)
-	}
+	
 
 	// Read API keys and URLs from environment variables.
 	fiatapikey := os.Getenv("FIAT_API_KEY")
