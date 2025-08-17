@@ -46,7 +46,7 @@ func (s *ExchangeRateServiceImpl) getRateForCurrencies(base, target, date string
 			key := internal.BaseCurrency + target
 			rate, exists := s.fiatcache.GetRateWithDate(date, key)
 			if exists {
-				return 1/rate, nil
+				return rate, nil
 			}
 		}else if target==internal.BaseCurrency{
 			key := internal.BaseCurrency + base
