@@ -20,17 +20,15 @@ A high-performance currency exchange rate service built with Go and Go-Kit frame
    ```bash
    cp .env.example .env
    ```
-## Pleaes use the API keys , mentioned below , for convenience , since this is a private repo , i've made them available in the readme 
-## or you can get new api keys at https://api.exchangerate.host/ , http://api.coinlayer.com/
 3. **Enter your API keys in `.env` file**
    ```bash
    # Edit .env file and add your API keys
-   
-  FIAT_API_KEY=032b7d9d9fb6d0029737824b9fc3b43d
-  FIAT_API_URL=https://api.exchangerate.host/
-  CRYPTO_API_URL=http://api.coinlayer.com/
-  CRYPTO_API_KEY=fed5a907404a4c87d6f3608dd891e589
-   
+```bash
+  FIAT_API_KEY=
+  FIAT_API_URL=
+  CRYPTO_API_URL=
+  CRYPTO_API_KEY=
+   ```
 
 
 4. **Start the entire stack with Docker Compose**
