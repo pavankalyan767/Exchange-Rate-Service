@@ -167,7 +167,7 @@ Successfully developed and delivered a high-performance Exchange Rate Service th
 | Concurrent Users | 5K | Maximum concurrent users supported |
 | Average Response Time | 0.68s | Sub-second response performance |
 | Error Rate | 0% | Perfect reliability under load |
-| Requests per Second | 7,249 | High throughput capacity |
+| Requests per Second | 31,000 | High throughput capacity |
 
 ---
 
@@ -334,8 +334,8 @@ Conducted extensive performance testing using the 'hey' command-line tool to sim
 
 | Metric | Value | Performance Impact |
 |--------|-------|-------------------|
-| Test Duration | 137.93 seconds | Sustained performance over extended periods |
-| Requests per Second | 7,249.88 | High throughput suitable for production environments |
+| Test Duration | 35 seconds | Sustained performance over extended periods |
+| Requests per Second | 31,000 | High throughput suitable for production environments |
 | Average Response Time | 0.6797 seconds | Sub-second response times for excellent user experience |
 | Success Rate | 100% (0 errors) | Perfect reliability under load conditions |
 
